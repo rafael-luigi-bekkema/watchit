@@ -56,7 +56,7 @@ For glob pattern rules see:
 
 ## Modes
 
-There are 3 modes: react, generate and service. Set mode with `--mode=`.
+There are 3 modes: react, generate and service. Set mode with `--mode=` or `-m=`.
 
 **react**  
 
@@ -66,7 +66,7 @@ Runs the command when a file changes.
 
 Runs the command upon start and when a file changes.
 
-**Service**  
+**service**  
 
 Runs the command upon start and restarts the command after each burst (within 1 ms) of file changes.
 
