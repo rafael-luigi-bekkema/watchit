@@ -46,3 +46,36 @@ Flags:
   -s, --shell string         Shell to use for command. Default is to run the command directly.
   -v, --verbose              Output more information.
 ```
+
+
+## Glob
+
+For glob pattern rules see:
+<https://github.com/bmatcuk/doublestar#patterns>
+
+
+## Modes
+
+There are 3 modes: react, generate and service. Set mode with `--mode=`.
+
+### React
+
+Runs the command when a file changes.
+
+### Generate
+
+Runs the command upon start and when a file changes.
+
+### Service
+
+Runs the command upon start and restarts the command after each burst (within 1 ms) of file changes.
+
+## Shell
+
+Normally the command runs directly without a shell. So the first argument is the main command, and further arguments as passed as arguments to the command.  
+To use things like && or > you can pass a shell, which will then be used to run the command. For example:
+```
+watchit -s $SHELL -- 'echo {} changed && date'
+# or
+watchit -s bash -- 'echo {} changed && date'
+```
