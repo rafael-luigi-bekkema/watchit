@@ -58,15 +58,15 @@ For glob pattern rules see:
 
 There are 3 modes: react, generate and service. Set mode with `--mode=`.
 
-### React
+**react**  
 
 Runs the command when a file changes.
 
-### Generate
+**generate**  
 
 Runs the command upon start and when a file changes.
 
-### Service
+**Service**  
 
 Runs the command upon start and restarts the command after each burst (within 1 ms) of file changes.
 
