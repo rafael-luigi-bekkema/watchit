@@ -269,60 +269,38 @@ func opsFromS(items []string) (result []fsnotify.Op, err error) {
 	return result, nil
 }
 
-func modeFromS(input string) (mode, error) {
-	if len(input) == 0 {
-		return 0, fmt.Errorf("mode can not be empty")
+func newWatcher() (*watcher, error) {
+	var err error
+	var w watcher
+	w.watcher, err = fsnotify.NewWatcher()
+	if err != nil {
+		return nil, err
 	}
-	switch input[0] {
-	case 'r':
-		return modeReact, nil
-	case 'g':
-		return modeGenerate, nil
-	case 's':
-		return modeService, nil
-	default:
-		return 0, fmt.Errorf("unknown mode: %q", input)
-	}
+	w.runcmd = make(chan string)
+	w.actions = make(chan action)
+	return &w, nil
 }
 
-func main() {
-	log.SetFlags(0)
-
-	var w watcher
+func makeCmd(name string, mode mode, short string, w *watcher) *cobra.Command {
 	var events []string
-	var mode string
-	mainCommand := cobra.Command{
-		Use:   "watchit CMD",
-		Short: "Run command on file change.",
-		Long:  "WatchIt is a program that can run a command in response to file changes. Also known as a 'file watcher'.",
-		Example: `watchit -g '*.txt' -- stat {}
-watchit --mode service  -- go run .
-watchit --mode generate -g '*.go' -- go generate
-watchit -s $SHELL -- 'echo {} && date'
-`,
-		SilenceUsage: true,
-		Args:         cobra.MinimumNArgs(1),
+
+	cmd := cobra.Command{
+		Use:   name + " CMD",
+		Short: short,
+		Args:  cobra.MinimumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			var err error
-			w.watcher, err = fsnotify.NewWatcher()
-			if err != nil {
-				return err
-			}
 			w.command = args
-			w.runcmd = make(chan string)
-			w.actions = make(chan action)
 			w.events, err = opsFromS(events)
 			if err != nil {
 				return err
 			}
-			w.mode, err = modeFromS(mode)
-			if err != nil {
-				return err
-			}
+			w.mode = mode
 			return w.run()
 		},
 	}
-	flags := mainCommand.Flags()
+
+	flags := cmd.Flags()
 	flags.StringArrayVarP(&w.globs, "glob", "g", nil, "Filename patterns to filter to (supports ** and {opt1,opt2}).")
 	flags.StringArrayVarP(&w.ignoreGlobs, "ignore", "i", nil, "Filename patterns to ignore (see --glob).")
 	flags.StringVarP(&w.workingDir, "path", "p", "", "Set working directory.")
@@ -330,7 +308,34 @@ watchit -s $SHELL -- 'echo {} && date'
 	flags.BoolVarP(&w.verbose, "verbose", "v", false, "Output more information.")
 	flags.StringSliceVarP(&events, "events", "e", nil, "Filesystem events to watch, comma separated. Options are: create,write,remove,rename,chmod.")
 	flags.StringVar(&w.placeholder, "placeholder", "{}", "String to use as placeholder. If the placeholder appears in the command, it will be replaced with the filename associated with the triggering event.")
-	flags.StringVarP(&mode, "mode", "m", "react", "There are 3 modes: react, generate, and service. react runs the command for each changed file, generate runs the command on startup and then for each changed file, service runs the command on startup, and restarts the command for each burst (within 1ms) of changed files.")
+
+	return &cmd
+}
+
+func main() {
+	log.SetFlags(0)
+
+	w, err := newWatcher()
+	if err != nil {
+		log.Fatalf("failed to start watcher: %s", err)
+	}
+	mainCommand := cobra.Command{
+		Use:   "watchit",
+		Short: "Run command on file change.",
+		Long:  "WatchIt is a program that can run a command in response to file changes. Also known as a 'file watcher'.",
+		Example: `watchit react -g '*.txt' -- stat {}
+watchit service  -- go run .
+watchit generate -g '*.go' -- go generate
+watchit react -s $SHELL -- 'echo {} && date'
+`,
+		SilenceUsage: true,
+	}
+
+	mainCommand.AddCommand(
+		makeCmd("react", modeReact, "Run the command when a file changes.", w),
+		makeCmd("generate", modeGenerate, "Run the command upon start and when a file changes.", w),
+		makeCmd("service", modeService, "Runs the command upon start and restarts the command after each burst (within 1 ms) of file changes.", w),
+	)
 
 	if err := mainCommand.Execute(); err != nil {
 		os.Exit(1)
