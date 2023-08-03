@@ -4,6 +4,14 @@ A program that runs a command when it detects file changes.
 
 Only runs on Linux for now.
 
+## Why?
+
+- Restart dev server when source files change
+- Re-generate asset based on changes in other assets
+- Run a linter / formatter when source file changes
+
+As a fully static binary `watchit` can easily be deployed anywhere.
+
 ## Example
 ```
 watchit react -- echo {}
