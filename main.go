@@ -31,12 +31,12 @@ func opsFromS(items []string) (result []fsnotify.Op, err error) {
 
 func makeCmd(name string, mode mode, short string, w *watcher) *cobra.Command {
 	var events []string
-
 	cmd := cobra.Command{
 		Use:     name + " CMD",
 		Short:   short,
 		Args:    cobra.MinimumNArgs(1),
 		GroupID: "watchers",
+		Aliases: []string{name[0:1]},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			var err error
 			w.command = args
