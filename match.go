@@ -19,7 +19,7 @@ func (w *watcher) match(op fsnotify.Op, filename string) bool {
 		return false
 	}
 	for _, glob := range w.ignoreGlobs {
-		if ok, _ := doublestar.Match(glob, filename); ok {
+		if ok, _ := doublestar.PathMatch(glob, filename); ok {
 			return false
 		}
 	}
@@ -27,7 +27,7 @@ func (w *watcher) match(op fsnotify.Op, filename string) bool {
 		return true // No globs so match everything (that isn't ignored)
 	}
 	for _, glob := range w.globs {
-		if ok, _ := doublestar.Match(glob, filename); ok {
+		if ok, _ := doublestar.PathMatch(glob, filename); ok {
 			return true
 		}
 	}

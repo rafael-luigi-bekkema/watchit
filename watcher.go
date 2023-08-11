@@ -3,12 +3,15 @@ package main
 import (
 	"fmt"
 	"io/fs"
-	"log"
+	"log/slog"
 	"os"
 	"path/filepath"
 
+	"github.com/bmatcuk/doublestar"
 	"github.com/fsnotify/fsnotify"
 )
+
+var defaultNoWatches = []string{"**/.git", "**/vendor", "**/node_modules"}
 
 type mode int
 
@@ -22,6 +25,7 @@ type watcher struct {
 	command     []string
 	globs       []string
 	ignoreGlobs []string
+	noWatch     []string
 	events      []fsnotify.Op
 	workingDir  string
 	shell       string
@@ -48,14 +52,21 @@ func newWatcher() (*watcher, error) {
 	return &w, nil
 }
 
-func (w *watcher) addRecursive(path string) error {
+func (w *watcher) addRecursive(workDir, path string) error {
 	return filepath.WalkDir(path, func(path string, d fs.DirEntry, err error) error {
 		if !d.IsDir() {
 			return nil
 		}
 
+		relpath, _ := filepath.Rel(workDir, path)
+		for _, glob := range w.noWatch {
+			if ok, _ := doublestar.PathMatch(glob, relpath); ok {
+				return filepath.SkipDir
+			}
+		}
+
 		if w.verbose {
-			log.Printf("adding watch for %s", path)
+			slog.Info("adding watch for", "path", path)
 		}
 		if err := w.watcher.Add(path); err != nil {
 			return err
@@ -75,11 +86,11 @@ type action struct {
 	payload string
 }
 
-func (w *watcher) eventLoop() error {
+func (w *watcher) eventLoop(workDir string) error {
 	for action := range w.actions {
 		switch action.typ {
 		case actionAdd:
-			if err := w.addRecursive(action.payload); err != nil {
+			if err := w.addRecursive(workDir, action.payload); err != nil {
 				return err
 			}
 		}
@@ -110,7 +121,7 @@ func (w *watcher) run() error {
 		return fmt.Errorf("%s is not a directory", path)
 	}
 
-	if err := w.addRecursive(path); err != nil {
+	if err := w.addRecursive(workDir, path); err != nil {
 		return err
 	}
 
@@ -119,5 +130,5 @@ func (w *watcher) run() error {
 	if w.mode == modeService || w.mode == modeGenerate {
 		w.runcmd <- ""
 	}
-	return w.eventLoop()
+	return w.eventLoop(workDir)
 }

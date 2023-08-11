@@ -1,7 +1,7 @@
 package main
 
 import (
-	"log"
+	"log/slog"
 	"os"
 	"path/filepath"
 
@@ -17,7 +17,7 @@ start:
 			panic("watch error")
 		}
 		if w.verbose {
-			log.Println("event", event)
+			slog.Info("FS Event.", "event", event)
 		}
 		eventName, _ := filepath.Rel(workDir, event.Name)
 		if w.match(event.Op, eventName) {
@@ -36,7 +36,7 @@ start:
 		if !ok {
 			panic("watch error")
 		}
-		log.Println("error", err)
+		slog.Error("Error.", "error", err)
 	}
 
 	goto start

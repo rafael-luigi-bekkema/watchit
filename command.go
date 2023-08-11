@@ -1,12 +1,13 @@
 package main
 
 import (
-	"log"
 	"os"
 	"os/exec"
 	"strings"
 	"syscall"
 	"time"
+
+	"log/slog"
 )
 
 func (w *watcher) buildCmd(filename string) []string {
@@ -56,23 +57,25 @@ inner:
 		for fname := range fnames {
 			if prevCmd != nil {
 				if err := prevCmd.Process.Signal(syscall.SIGTERM); err != nil {
-					log.Printf("could not send SIGTERM: %s", err)
+					slog.Error("Could not send SIGTERM.", "error", err)
 				}
 				if err := prevCmd.Wait(); err != nil {
-					log.Printf("command failed: %s", err)
+					slog.Error("Command failed.", "error", err)
 				}
 			}
 
 			cmd, err := w.runCmd(fname)
 			if err != nil {
-				log.Printf("failed to run command: %s", err)
+				slog.Error("Command failed.", "error", err)
 				goto outer
 			}
 			if w.mode == modeService {
 				prevCmd = cmd
 				break
 			} else {
-				cmd.Wait()
+				if err := cmd.Wait(); err != nil {
+					slog.Error("Command failed.", "error", err)
+				}
 			}
 		}
 		goto outer
