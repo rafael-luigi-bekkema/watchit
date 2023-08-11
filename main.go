@@ -55,9 +55,8 @@ func makeCmd(name string, mode mode, short string, w *watcher) *cobra.Command {
 		"Filename patterns to filter to (supports ** and {opt1,opt2}).")
 	flags.StringArrayVarP(&w.ignoreGlobs, "ignore", "i", nil,
 		"Filename patterns to ignore (see --glob).")
-	flags.StringArrayVarP(&w.noWatch, "no-watch", "n", defaultNoWatches,
-		"Patterns for directories that should not be watched. --glob and --ignore do not affect watched directories."+
-			"Pass empty string to watch all subdirectories.")
+	flags.StringArrayVarP(&w.noWatch, "no-watch", "n", nil,
+		"Patterns for directories that should not be watched. --glob and --ignore do not affect watched directories.")
 	flags.StringVarP(&w.workingDir, "path", "p", "", "Set working directory.")
 	flags.StringVarP(&w.shell, "shell", "s", "",
 		"Shell to use for command. Default is to run the command directly.")

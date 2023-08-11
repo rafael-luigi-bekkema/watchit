@@ -6,12 +6,11 @@ import (
 	"log/slog"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/bmatcuk/doublestar"
 	"github.com/fsnotify/fsnotify"
 )
-
-var defaultNoWatches = []string{"**/.git", "**/vendor", "**/node_modules"}
 
 type mode int
 
@@ -26,6 +25,7 @@ type watcher struct {
 	globs       []string
 	ignoreGlobs []string
 	noWatch     []string
+	noWatchEnv  []string
 	events      []fsnotify.Op
 	workingDir  string
 	shell       string
@@ -59,7 +59,7 @@ func (w *watcher) addRecursive(workDir, path string) error {
 		}
 
 		relpath, _ := filepath.Rel(workDir, path)
-		for _, glob := range w.noWatch {
+		for _, glob := range append(w.noWatch, w.noWatchEnv...) {
 			if ok, _ := doublestar.PathMatch(glob, relpath); ok {
 				return filepath.SkipDir
 			}
@@ -100,6 +100,11 @@ func (w *watcher) eventLoop(workDir string) error {
 
 func (w *watcher) run() error {
 	defer w.watcher.Close()
+
+	if val := os.Getenv("WATCHIT_NO_WATCH"); val != "" {
+		w.noWatchEnv = strings.Split(val, ":")
+		slog.Info("using WATCHIT_NO_WATCH", "value", w.noWatchEnv)
+	}
 
 	if w.workingDir != "" {
 		if err := os.Chdir(w.workingDir); err != nil {

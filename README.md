@@ -21,12 +21,12 @@ watchit react -- echo {}
 
 With Go available:
 ```
-go install github.com/rafael-luigi-bekkema/watchit
+go install github.com/rafael-luigi-bekkema/watchit@latest
 ```
 
-Or to install to `/usr/local/bin/watchit`:
+Or to **go install** from a clone:
 ```
-make && sudo make install
+make install
 ```
 
 ## Usage
@@ -36,15 +36,19 @@ Run the command when a file changes.
 Usage:
   watchit react CMD [flags]
 
+Aliases:
+  react, r
+
 Flags:
-  -e, --events strings       Filesystem events to watch, comma separated. Options are: create,write,remove,rename,chmod.
-  -g, --glob stringArray     Filename patterns to filter to (supports ** and {opt1,opt2}).
-  -h, --help                 help for react
-  -i, --ignore stringArray   Filename patterns to ignore (see --glob).
-  -p, --path string          Set working directory.
-      --placeholder string   String to use as placeholder. If the placeholder appears in the command, it will be replaced with the filename associated with the triggering event. (default "{}")
-  -s, --shell string         Shell to use for command. Default is to run the command directly.
-  -v, --verbose              Output more information.
+  -e, --events strings         Filesystem events to watch, comma separated. Options are: create,write,remove,rename,chmod.
+  -g, --glob stringArray       Filename patterns to filter to (supports ** and {opt1,opt2}).
+  -h, --help                   help for react
+  -i, --ignore stringArray     Filename patterns to ignore (see --glob).
+  -n, --no-watch stringArray   Patterns for directories that should not be watched. --glob and --ignore do not affect watched directories.
+  -p, --path string            Set working directory.
+      --placeholder string     String to use as placeholder. If the placeholder appears in the command, it will be replaced with the filename associated with the triggering event. (default "{}")
+  -s, --shell string           Shell to use for command. Default is to run the command directly.
+  -v, --verbose                Output more information.
 
 Usage:
   watchit generate CMD [flags]
@@ -52,6 +56,16 @@ Usage:
 Usage:
   watchit service CMD [flags]
 ```
+
+## Environment variables
+
+**WATCHIT_NO_WATCH** can be used to set patterns for directories that should not be watched.  
+For example add to your .bashrc / .zshrc:
+```
+export WATCHIT_NO_WATCH=**/.git:**/node_modules:**/vendor
+```
+
+You can use something like **direnv** to manage this on a per project basis.
 
 
 ## Glob
